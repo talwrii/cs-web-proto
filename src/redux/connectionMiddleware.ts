@@ -26,26 +26,31 @@ function valueChanged(pvName: string, value: NType): void {
   });
 }
 
-/* Cheating with the types here. */
-// eslint doesn't deal with currying very well:
-// (x:any): any => (y:any): any => (z:any): any is perverse
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-export const connectionMiddleware = (connection: Connection) => (
-  store: any
-) => (next: any): any => (action: any): any => {
-  if (!connection.isConnected()) {
-    connection.connect(connectionChanged, valueChanged);
+class ConnectionMiddleware {
+  private connection: Connection;
+
+  public constructor(connection: Connection) {
+    this.connection = connection;
   }
 
-  switch (action.type) {
-    case SUBSCRIBE: {
-      connection.subscribe(action.payload.pvName);
-      break;
+  /* Cheating with the types here. */
+  // eslint doesn't deal with currying very well:
+  // (x:any): any => (y:any): any => (z:any): any is perverse
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+  public updateStore = (store: any) => (next: any) => (action: any) => {
+    if (!this.connection.isConnected()) {
+      this.connection.connect(connectionChanged, valueChanged);
     }
-    case WRITE_PV: {
-      connection.putPv(action.payload.pvName, action.payload.value);
-      break;
+    switch (action.type) {
+      case SUBSCRIBE: {
+        this.connection.subscribe(action.payload.pvName);
+        break;
+      }
+      case WRITE_PV: {
+        this.connection.putPv(action.payload.pvName, action.payload.value);
+        break;
+      }
     }
-  }
-  return next(action);
-};
+    return next(action);
+  };
+}

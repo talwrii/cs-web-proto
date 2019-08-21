@@ -1,18 +1,21 @@
 import React from "react";
 import "./App.css";
 import { Provider } from "react-redux";
-import { ConnectedReadback } from "./components/Readback/readback";
-import { ConnectedInput } from "./components/Input/input";
 import { ConnectedProgressBar } from "./components/ProgressBar/ProgressBar";
 import { ConnectedSlideControl } from "./components/SlideControl/SlideControl";
 import { AlarmBorder } from "./components/AlarmBorder/AlarmBorder";
 import { getStore, initialiseStore } from "./redux/store";
 import { SimulatorPlugin } from "./connection/sim";
+import { ConnectionMiddleware } from "./redux/connectionMiddleware";
+import { ConnectedReadback } from "./components/readback";
+import { ConnectedInput } from "./components/input";
+
+const plugin = new SimulatorPlugin();
+initialiseStore(new ConnectionMiddleware(plugin));
+
+const store = getStore();
 
 const App: React.FC = (): JSX.Element => {
-  const plugin = new SimulatorPlugin();
-  initialiseStore(plugin);
-  let store = getStore();
   return (
     <Provider store={store}>
       <div className="App">
