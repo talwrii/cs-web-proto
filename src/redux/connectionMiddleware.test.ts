@@ -6,7 +6,7 @@ import { PvResolver, NoMapping } from "./connectionMiddleware";
 
 it("maps correctly", (): void => {
   let resolver = new PvResolver();
-  let actions = resolver.mapMacro("name", "dave");
+  resolver.mapMacro("name", "dave");
   let result = resolver.resolve("hello:${name}");
   expect(result.pv.resolvedName).toBe("hello:dave");
   expect(result.newResolutions.length).toBe(1);
@@ -37,7 +37,7 @@ it("supports remap", (): void => {
 it("missing mapping", (): void => {
   let resolver = new PvResolver();
   resolver.mapMacro("name", "dave");
-  expect(() => resolver.resolve("hello:${nam}")).toThrowError(
+  expect((): never => resolver.resolve("hello:${nam}")).toThrowError(
     new NoMapping("nam")
   );
 });

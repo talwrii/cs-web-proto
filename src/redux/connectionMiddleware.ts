@@ -34,25 +34,27 @@ class ResolvedPv {
 }
 
 export class NoMapping extends Error {
-  mapping: string;
-  constructor(public mapping: string) {
+  public mapping: string;
+  public constructor(mapping: string) {
     super("No mapping for " + mapping);
     this.mapping = mapping;
     this.name = "UnexpectedInput";
   }
 }
 
-function interpolate(str: string, substitutions: { [string]: string }) {
-  let groups = [];
+function interpolate(
+  str: string,
+  substitutions: { [substitution: string]: string }
+): string {
+  const requiredMappings: string[] = [];
 
-  var result;
-  var regexp = /\${(.*?)}/g;
+  const regexp = /\${(.*?)}/g;
+  let result = null;
   while ((result = regexp.exec(str))) {
-    groups.push(result[1]);
+    requiredMappings.push(result[1]);
   }
-  let requiredMappings = groups;
-  let missingsMappings = requiredMappings.filter(
-    x => substitutions[x] === undefined
+  const missingsMappings = requiredMappings.filter(
+    (x: string): boolean => substitutions[x] === undefined
   );
 
   if (missingsMappings.length != 0) {
@@ -63,39 +65,25 @@ function interpolate(str: string, substitutions: { [string]: string }) {
 }
 
 export class PvResolver {
-  substitutions: { [string]: string };
-  resolutions: { [unmapped: string]: ResolvedPv };
+  private substitutions: { [unmapped: string]: string };
+  private resolutions: { [unmapped: string]: ResolvedPv };
 
   public constructor() {
     this.substitutions = {};
     this.resolutions = {};
   }
 
-  private hasResolution(pv: ResolvedPv) {
-    const existingNames = Object.keys(this.resolutions).map(
-      x => x.resolvedName
-    );
-    return existingNames.indexOf(pv.resolvedName) != -1;
-  }
-
   public resolve(
     name: string
-  ): { pv: ResolvedPv; newResolutions: [ResolvedPv] } {
+  ): { pv: ResolvedPv; newResolutions: ResolvedPv[] } {
     const oldResolution = this.resolutions[name];
     const resolvedPv = new ResolvedPv(interpolate(name, this.substitutions));
 
-    console.log("resolve");
-    console.log(oldResolution);
-    console.log(resolvedPv);
-
-    var newResolutions;
+    let newResolutions: ResolvedPv[] = [];
     if (
       oldResolution == undefined ||
       oldResolution.resolvedName != resolvedPv.resolvedName
     ) {
-      console.log("New resolutiosn");
-      console.log(oldResolution);
-      console.log(resolvedPv);
       newResolutions = [resolvedPv];
     } else {
       newResolutions = [];
@@ -127,8 +115,8 @@ export class PvResolver {
       //   in each resolution and then only remap these. But this feels like
       //   a premature performance hack
 
-      let oldResolution = this.resolutions[unresolved];
-      let newResolution = new ResolvedPv(
+      const oldResolution = this.resolutions[unresolved];
+      const newResolution = new ResolvedPv(
         interpolate(unresolved, this.substitutions)
       );
       if (oldResolution.resolvedName != newResolution.resolvedName) {
@@ -137,19 +125,19 @@ export class PvResolver {
         updates[unresolved] = newResolution;
       }
 
-      for (let unresolved in updates) {
-        this.resolutions[unresolved] = updates[unresolved];
+      for (const update of Object.keys(updates)) {
+        this.resolutions[update] = updates[update];
       }
     }
 
     return {
-      newResolutions: newResolutions,
-      removedResolutions: removedResolutions
+      newResolutions,
+      removedResolutions
     };
   }
 }
 
-class ConnectionMiddleware {
+export class ConnectionMiddleware {
   private connection: Connection;
 
   public constructor(connection: Connection) {
