@@ -1,7 +1,6 @@
 import { createStore, applyMiddleware, Store } from "redux";
 
 import { csReducer, CsState } from "./csState";
-import { getConnectionMiddleware } from "./connectionMiddleware";
 
 // Setting this to Action or Action<Any> seems to trip up the type system
 type MyStore = Store<CsState, any>;
