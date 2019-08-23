@@ -26,7 +26,7 @@ function valueChanged(pvName: string, value: NType): void {
   });
 }
 
-class ResolvedPv {
+export class ResolvedPv {
   public resolvedName: string;
   public constructor(resolvedName: string) {
     this.resolvedName = resolvedName;
@@ -61,23 +61,32 @@ function interpolate(
     throw new NoMapping(missingsMappings[0]);
   }
 
-  return str.replace(/\${(.*?)}/g, (x, g) => substitutions[g]);
+  return str.replace(/\${(.*?)}/g, (x, g): string => substitutions[g]);
 }
 
 export class PvResolver {
   private substitutions: { [unmapped: string]: string };
   private resolutions: { [unmapped: string]: ResolvedPv };
+  private reverseResolutions: { [resolved: string]: string[] };
 
   public constructor() {
     this.substitutions = {};
     this.resolutions = {};
+    this.reverseResolutions = {};
+  }
+
+  public unresolve(resolved: ResolvedPv): string[] {
+    let result = this.reverseResolutions[resolved.resolvedName];
+    return result;
   }
 
   public resolve(
-    name: string
+    unresolved: string
   ): { pv: ResolvedPv; newResolutions: ResolvedPv[] } {
-    const oldResolution = this.resolutions[name];
-    const resolvedPv = new ResolvedPv(interpolate(name, this.substitutions));
+    const oldResolution = this.resolutions[unresolved];
+    const resolvedPv = new ResolvedPv(
+      interpolate(unresolved, this.substitutions)
+    );
 
     let newResolutions: ResolvedPv[] = [];
     if (
@@ -89,12 +98,36 @@ export class PvResolver {
       newResolutions = [];
     }
 
-    this.resolutions[name] = resolvedPv;
+    this.mapResolution(unresolved, resolvedPv);
 
     return {
       pv: resolvedPv,
-      newResolutions: newResolutions
+      newResolutions
     };
+  }
+
+  private mapResolution(unresolved: string, newResolution: ResolvedPv): void {
+    /** Maps a resolution and the corresponding reverse mapping */
+    const oldResolution = this.resolutions[unresolved];
+
+    if (oldResolution != undefined) {
+      this.reverseResolutions[oldResolution.resolvedName].splice(
+        this.reverseResolutions[oldResolution.resolvedName].indexOf(unresolved)
+      );
+    }
+    this.resolutions[unresolved] = newResolution;
+
+    if (this.reverseResolutions[newResolution.resolvedName] === undefined) {
+      this.reverseResolutions[newResolution.resolvedName] = [];
+    }
+
+    if (
+      this.reverseResolutions[newResolution.resolvedName].indexOf(
+        unresolved
+      ) === -1
+    ) {
+      this.reverseResolutions[newResolution.resolvedName].push(unresolved);
+    }
   }
 
   public mapMacro(
@@ -126,7 +159,7 @@ export class PvResolver {
       }
 
       for (const update of Object.keys(updates)) {
-        this.resolutions[update] = updates[update];
+        this.mapResolution(update, updates[update]);
       }
     }
 

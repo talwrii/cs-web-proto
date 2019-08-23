@@ -1,6 +1,7 @@
-import { PvResolver, NoMapping } from "./connectionMiddleware";
+import { PvResolver, NoMapping, ResolvedPv } from "./connectionMiddleware";
 
 /* So a *resolution* can result in subscriptions
+
 
 */
 
@@ -15,6 +16,25 @@ it("maps correctly", (): void => {
   let result2 = resolver.resolve("hello:${name}");
   expect(result2.pv.resolvedName).toBe("hello:dave");
   expect(result2.newResolutions.length).toBe(0);
+});
+
+it("reverse maps correctly", (): void => {
+  let resolver = new PvResolver();
+  resolver.mapMacro("name", "dave");
+  resolver.resolve("hello:${name}");
+  let result = resolver.unresolve(new ResolvedPv("hello:dave"));
+  expect(result).toStrictEqual(["hello:${name}"]);
+});
+
+it("supports reverse map collisions", (): void => {
+  let resolver = new PvResolver();
+  resolver.mapMacro("name", "dave");
+  resolver.mapMacro("other", "dave");
+
+  resolver.resolve("hello:${name}");
+  resolver.resolve("hello:${other}");
+  let unresolved = resolver.unresolve(new ResolvedPv("hello:dave"));
+  expect(unresolved).toStrictEqual(["hello:${name}", "hello:${other}"]);
 });
 
 it("supports remap", (): void => {
@@ -37,7 +57,7 @@ it("supports remap", (): void => {
 it("missing mapping", (): void => {
   let resolver = new PvResolver();
   resolver.mapMacro("name", "dave");
-  expect((): never => resolver.resolve("hello:${nam}")).toThrowError(
+  expect((): any => resolver.resolve("hello:${nam}")).toThrowError(
     new NoMapping("nam")
   );
 });
