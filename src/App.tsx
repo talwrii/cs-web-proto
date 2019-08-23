@@ -8,7 +8,7 @@ import { getStore, initialiseStore } from "./redux/store";
 import { SimulatorPlugin } from "./connection/sim";
 import { ConnectionMiddleware } from "./redux/connectionMiddleware";
 import { ConnectedReadback } from "./components/readback";
-import { ConnectedInput } from "./components/input";
+import { ConnectedInput } from "./components/Input/input";
 
 const plugin = new SimulatorPlugin();
 initialiseStore(new ConnectionMiddleware(plugin));
