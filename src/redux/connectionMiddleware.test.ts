@@ -18,6 +18,22 @@ it("maps correctly", (): void => {
   expect(result2.newResolutions.length).toBe(0);
 });
 
+it("prompts refreshes on collision", (): void => {
+  let resolver = new PvResolver();
+  resolver.mapMacro("name", "dave");
+  resolver.mapMacro("nom", "dave");
+  let result = resolver.resolve("hello:${name}");
+  let collisionResult = resolver.resolve("hello:${nom}");
+
+  expect(collisionResult.pv.resolvedName).toBe("hello:dave");
+  expect(collisionResult.newResolutions.length).toBe(0);
+
+  expect(collisionResult.duplicateResolutions.length).toBe(1);
+  expect(collisionResult.duplicateResolutions[0].resolvedName).toBe(
+    "hello:dave"
+  );
+});
+
 it("reverse maps correctly", (): void => {
   let resolver = new PvResolver();
   resolver.mapMacro("name", "dave");

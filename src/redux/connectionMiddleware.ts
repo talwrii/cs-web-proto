@@ -82,18 +82,28 @@ export class PvResolver {
 
   public resolve(
     unresolved: string
-  ): { pv: ResolvedPv; newResolutions: ResolvedPv[] } {
+  ): {
+    pv: ResolvedPv;
+    newResolutions: ResolvedPv[];
+    duplicateResolutions: ResolvedPv[];
+  } {
     const oldResolution = this.resolutions[unresolved];
     const resolvedPv = new ResolvedPv(
       interpolate(unresolved, this.substitutions)
     );
 
+    let duplicateResolutions: ResolvedPv[] = [];
     let newResolutions: ResolvedPv[] = [];
-    if (
-      oldResolution == undefined ||
-      oldResolution.resolvedName != resolvedPv.resolvedName
-    ) {
-      newResolutions = [resolvedPv];
+    if (oldResolution == undefined) {
+      if (this.reverseResolutions[resolvedPv.resolvedName] === undefined) {
+        newResolutions = [resolvedPv];
+        duplicateResolutions = [];
+      } else {
+        newResolutions = [];
+        duplicateResolutions = [resolvedPv];
+      }
+    } else if (oldResolution.resolvedName != resolvedPv.resolvedName) {
+      throw new Error("Resolution changed unexpectedly");
     } else {
       newResolutions = [];
     }
@@ -102,7 +112,8 @@ export class PvResolver {
 
     return {
       pv: resolvedPv,
-      newResolutions
+      newResolutions,
+      duplicateResolutions
     };
   }
 
