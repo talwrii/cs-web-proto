@@ -7,11 +7,12 @@ import { AlarmBorder } from "./components/AlarmBorder/AlarmBorder";
 import { getStore, initialiseStore } from "./redux/store";
 import { SimulatorPlugin } from "./connection/sim";
 import { ConnectionMiddleware } from "./redux/connectionMiddleware";
-import { ConnectedReadback } from "./components/readback";
+import { ConnectedReadback } from "./components/Readback/readback";
 import { ConnectedInput } from "./components/Input/input";
+import { PvResolver } from "./redux/pvResolver";
 
 const plugin = new SimulatorPlugin();
-initialiseStore(new ConnectionMiddleware(plugin));
+initialiseStore(new ConnectionMiddleware(plugin, new PvResolver()).updateStore);
 
 const store = getStore();
 

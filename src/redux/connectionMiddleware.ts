@@ -1,7 +1,8 @@
 import { Connection } from "../connection/plugin";
-import { PvResolver, PvResolved } from "../connection/pvResolver";
+import { PvResolver, ResolvedPv } from "../redux/pvResolver";
 import { Store } from "redux";
-import { CsState } from "redux/csState";
+import { CsState } from "../redux/csState";
+
 import {
   CONNECTION_CHANGED,
   SUBSCRIBE,
@@ -63,7 +64,7 @@ export class ConnectionMiddleware {
     }
   }
 
-  private refreshPv(store: Store<CsState, any>, resolution: PvResolved) {
+  private refreshPv(store: Store<CsState, any>, resolution: ResolvedPv) {
     let csState: CsState = store.getState();
     let currentValue = csState.valueCache[resolution.resolvedName];
     if (currentValue !== undefined) {

@@ -20,7 +20,7 @@ function interpolate(
     (x: string): boolean => substitutions[x] === undefined
   );
 
-  if (missingsMappings.length != 0) {
+  if (missingsMappings.length !== 0) {
     throw new NoMapping(missingsMappings[0]);
   }
 
@@ -66,7 +66,7 @@ export class PvResolver {
 
     let duplicateResolutions: ResolvedPv[] = [];
     let newResolutions: ResolvedPv[] = [];
-    if (oldResolution == undefined) {
+    if (oldResolution === undefined) {
       if (this.reverseResolutions[resolvedPv.resolvedName] === undefined) {
         newResolutions = [resolvedPv];
         duplicateResolutions = [];
@@ -74,7 +74,7 @@ export class PvResolver {
         newResolutions = [];
         duplicateResolutions = [resolvedPv];
       }
-    } else if (oldResolution.resolvedName != resolvedPv.resolvedName) {
+    } else if (oldResolution.resolvedName !== resolvedPv.resolvedName) {
       throw new Error("Resolution changed unexpectedly");
     } else {
       newResolutions = [];
@@ -93,12 +93,12 @@ export class PvResolver {
     /** Maps a resolution and the corresponding reverse mapping */
     const oldResolution = this.resolutions[unresolved];
 
-    if (oldResolution != undefined) {
+    if (oldResolution !== undefined) {
       this.reverseResolutions[oldResolution.resolvedName].splice(
         this.reverseResolutions[oldResolution.resolvedName].indexOf(unresolved)
       );
 
-      if (this.reverseResolutions[oldResolution.resolvedName].length == 0) {
+      if (this.reverseResolutions[oldResolution.resolvedName].length === 0) {
         delete this.reverseResolutions[oldResolution.resolvedName];
       }
     }
@@ -147,7 +147,7 @@ export class PvResolver {
       const newResolution = new ResolvedPv(
         interpolate(unresolved, this.substitutions)
       );
-      if (oldResolution.resolvedName != newResolution.resolvedName) {
+      if (oldResolution.resolvedName !== newResolution.resolvedName) {
         updates[unresolved] = newResolution;
         newOrDuplicateResolutions.push(newResolution);
       }
