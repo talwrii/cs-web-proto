@@ -22,7 +22,7 @@ it("prompts refreshes on collision", (): void => {
   let resolver = new PvResolver();
   resolver.mapMacro("name", "dave");
   resolver.mapMacro("nom", "dave");
-  let result = resolver.resolve("hello:${name}");
+  resolver.resolve("hello:${name}");
   let collisionResult = resolver.resolve("hello:${nom}");
 
   expect(collisionResult.pv.resolvedName).toBe("hello:dave");
@@ -68,6 +68,24 @@ it("supports remap", (): void => {
   let resultTim = resolver.resolve("hello:${name}");
   expect(resultTim.pv.resolvedName).toBe("hello:tim");
   expect(resultTim.newResolutions.length).toBe(0);
+});
+
+it("supports remap collision", (): void => {
+  let resolver = new PvResolver();
+  resolver.mapMacro("a", "one");
+  resolver.mapMacro("b", "two");
+
+  resolver.resolve("common:${a}");
+  resolver.resolve("common:${b}");
+
+  let mapping2 = resolver.mapMacro("b", "one");
+
+  expect(mapping2.newResolutions.length).toBe(0);
+  expect(mapping2.duplicateResolutions.length).toBe(1);
+  expect(mapping2.duplicateResolutions[0].resolvedName).toBe("common:one");
+
+  expect(mapping2.removedResolutions.length).toBe(1);
+  expect(mapping2.removedResolutions[0].resolvedName).toBe("common:two");
 });
 
 it("missing mapping", (): void => {

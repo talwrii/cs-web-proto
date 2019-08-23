@@ -125,6 +125,10 @@ export class PvResolver {
       this.reverseResolutions[oldResolution.resolvedName].splice(
         this.reverseResolutions[oldResolution.resolvedName].indexOf(unresolved)
       );
+
+      if (this.reverseResolutions[oldResolution.resolvedName].length == 0) {
+        delete this.reverseResolutions[oldResolution.resolvedName];
+      }
     }
     this.resolutions[unresolved] = newResolution;
 
@@ -144,7 +148,11 @@ export class PvResolver {
   public mapMacro(
     macro: string,
     valueString: string
-  ): { newResolutions: ResolvedPv[]; removedResolutions: ResolvedPv[] } {
+  ): {
+    newResolutions: ResolvedPv[];
+    removedResolutions: ResolvedPv[];
+    duplicateResolutions: ResolvedPv[];
+  } {
     /**
        This may remove and add resolutions if the mappings have changed.
      */
@@ -152,31 +160,68 @@ export class PvResolver {
 
     let newResolutions: ResolvedPv[] = [];
     let removedResolutions: ResolvedPv[] = [];
+    let duplicateResolutions: ResolvedPv[] = [];
     let updates: { [unresolved: string]: ResolvedPv } = {};
+
+    // map everything affresh
 
     for (let unresolved in this.resolutions) {
       // potentially inefficient - we could pull out the mappings involved
       //   in each resolution and then only remap these. But this feels like
       //   a premature performance hack
 
+      const newOrDuplicateResolutions: ResolvedPv[] = [];
       const oldResolution = this.resolutions[unresolved];
       const newResolution = new ResolvedPv(
         interpolate(unresolved, this.substitutions)
       );
       if (oldResolution.resolvedName != newResolution.resolvedName) {
-        newResolutions.push(newResolution);
-        removedResolutions.push(oldResolution);
         updates[unresolved] = newResolution;
+        newOrDuplicateResolutions.push(newResolution);
+      }
+
+      // for each update identifies an unresolved pv and a resolved pv
+      // first collect up these affected pvs
+
+      const maybeRemovedResolutions: ResolvedPv[] = [];
+      for (const update of Object.keys(updates)) {
+        maybeRemovedResolutions.push(this.resolutions[update]);
+      }
+
+      // The added or updated resolutions are added or updated accordingly to
+      // whether there was a mapping to them prior to update
+
+      for (const newOrDuplicateResolution of newOrDuplicateResolutions) {
+        if (
+          this.reverseResolutions[newOrDuplicateResolution.resolvedName] ===
+          undefined
+        ) {
+          newResolutions.push(newOrDuplicateResolution);
+        } else {
+          duplicateResolutions.push(newOrDuplicateResolution);
+        }
       }
 
       for (const update of Object.keys(updates)) {
         this.mapResolution(update, updates[update]);
       }
+
+      // The maybeRemovedResolutions are removed if there is no reverse mapping
+      // to them after update
+      for (const maybeRemovedResolution of maybeRemovedResolutions) {
+        if (
+          this.reverseResolutions[maybeRemovedResolution.resolvedName] ===
+          undefined
+        ) {
+          removedResolutions.push(maybeRemovedResolution);
+        }
+      }
     }
 
     return {
       newResolutions,
-      removedResolutions
+      removedResolutions,
+      duplicateResolutions
     };
   }
 }
