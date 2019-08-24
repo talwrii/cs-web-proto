@@ -16,25 +16,6 @@ export interface ConnectionState {
   isConnected: boolean;
 }
 
-function connectionChanged(pvName: string, value: ConnectionState): void {
-  getStore().dispatch({
-    type: CONNECTION_CHANGED,
-    payload: { pvName: pvName, value: value }
-  });
-}
-
-function valueChanged(
-  pvName: string,
-  value: NType,
-  store?: Store<CsState, any>
-): void {
-  store = store || getStore();
-  store.dispatch({
-    type: VALUE_CHANGED,
-    payload: { pvName: pvName, value: value }
-  });
-}
-
 export class ConnectionMiddleware {
   private connection: Connection;
   private resolver: PvResolver;
@@ -60,15 +41,17 @@ export class ConnectionMiddleware {
     // }
 
     for (let resolution of changes.duplicateResolutions) {
-      this.refreshPv(store, resolution);
+      this.refreshPvs(store, resolution);
     }
   }
 
-  private refreshPv(store: Store<CsState, any>, resolution: ResolvedPv) {
+  private refreshPvs(store: Store<CsState, any>, resolution: ResolvedPv) {
     let csState: CsState = store.getState();
-    let currentValue = csState.valueCache[resolution.resolvedName];
-    if (currentValue !== undefined) {
-      valueChanged(resolution.resolvedName, currentValue.value, store);
+    for (let pv of this.resolver.unresolve(resolution)) {
+      let currentValue = csState.valueCache[pv];
+      if (currentValue !== undefined) {
+        this.valueChanged(resolution, currentValue.value, store);
+      }
     }
   }
 
@@ -80,7 +63,10 @@ export class ConnectionMiddleware {
     action: any
   ) => {
     if (!this.connection.isConnected()) {
-      this.connection.connect(connectionChanged, valueChanged);
+      this.connection.connect(
+        (first, second) => this.connectionChanged(first, second, store),
+        (first, second) => this.valueChanged(first, second, store)
+      );
     }
     switch (action.type) {
       case SUBSCRIBE: {
@@ -90,7 +76,7 @@ export class ConnectionMiddleware {
         }
 
         for (let resolution of result.duplicateResolutions) {
-          this.refreshPv(store, resolution);
+          this.refreshPvs(store, resolution);
         }
 
         break;
@@ -102,4 +88,30 @@ export class ConnectionMiddleware {
     }
     return next(action);
   };
+
+  public valueChanged(
+    resolution: ResolvedPv,
+    value: NType,
+    store: Store<CsState, any>
+  ): void {
+    for (let pvName of this.resolver.unresolve(resolution)) {
+      store.dispatch({
+        type: VALUE_CHANGED,
+        payload: { pvName: pvName, value: value }
+      });
+    }
+  }
+
+  private connectionChanged(
+    resolution: ResolvedPv,
+    value: ConnectionState,
+    store: Store<CsState, any>
+  ): void {
+    for (let pvName of this.resolver.unresolve(resolution)) {
+      store.dispatch({
+        type: CONNECTION_CHANGED,
+        payload: { pvName: pvName, value: value }
+      });
+    }
+  }
 }

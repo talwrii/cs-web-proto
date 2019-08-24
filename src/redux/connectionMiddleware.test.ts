@@ -12,7 +12,7 @@ interface Test {
 
 function mockStore() {
   let mockedStore = mock<Store<CsState, any>>();
-  let csState: CsState = { valueCache: { duplicate: { value: 7 } } };
+  let csState: CsState = { valueCache: { DUPLICATE: { value: 7 } } };
   when(mockedStore.getState()).thenReturn(csState);
   return [mockedStore, instance(mockedStore)];
 }
@@ -20,6 +20,10 @@ function mockStore() {
 it("exercise connection store", (): void => {
   let mockedResolver: PvResolver = mock(PvResolver);
   let mockedConnection: Connection = mock<Connection>();
+
+  when(mockedResolver.unresolve(anything())).thenCall(x => [
+    x.resolvedName.toUpperCase()
+  ]);
 
   when(mockedResolver.mapMacro("name", "tim")).thenReturn({
     newResolutions: [new ResolvedPv("new")],
@@ -37,6 +41,6 @@ it("exercise connection store", (): void => {
 
   let value = capture(mockedStore.dispatch).last()[0];
   expect(value["type"]).toBe("value_changed");
-  expect(value["payload"]["pvName"]).toBe("duplicate");
+  expect(value["payload"]["pvName"]).toBe("DUPLICATE");
   expect(value["payload"]["value"]).toBe(7);
 });
