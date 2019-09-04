@@ -64,8 +64,8 @@ export class ConnectionMiddleware {
   ) => {
     if (!this.connection.isConnected()) {
       this.connection.connect(
-        (first, second) => this.connectionChanged(first, second, store),
-        (first, second) => this.valueChanged(first, second, store)
+        (first, second) => this.connectionChanged(new ResolvedPv(first), second, store),
+        (first, second) => this.valueChanged(new ResolvedPv(first), second, store)
       );
     }
     switch (action.type) {

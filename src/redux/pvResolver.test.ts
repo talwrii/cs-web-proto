@@ -1,4 +1,4 @@
-import { PvResolver, NoMapping, ResolvedPv } from "./connectionMiddleware";
+import { PvResolver, NoMapping, ResolvedPv } from "./pvResolver";
 
 /* So a *resolution* can result in subscriptions
 
@@ -13,10 +13,31 @@ it("maps correctly", (): void => {
   expect(result.newResolutions.length).toBe(1);
   expect(result.newResolutions[0].resolvedName).toBe("hello:dave");
 
+
   let result2 = resolver.resolve("hello:${name}");
   expect(result2.pv.resolvedName).toBe("hello:dave");
   expect(result2.newResolutions.length).toBe(0);
 });
+
+it("handles resolution of weird names", () => {
+  let resolver = new PvResolver();
+  let result = resolver.resolve("sim://sine");
+  let unresult = resolver.unresolve(new ResolvedPv("sim://sine"));
+  expect(unresult.length).toBe(1);
+  expect(unresult[0]).toBe("sim://sine");
+});
+
+it("handles resolution and unresolution with no mapping", () => {
+  let resolver = new PvResolver();
+  let result = resolver.resolve("test:nomappings");
+  
+  expect(result.newResolutions.length).toBe(1);
+  expect(result.newResolutions[0].resolvedName).toBe("test:nomappings");
+  
+  let unresult = resolver.unresolve(new ResolvedPv("test:nomappings"));
+  expect(unresult.length).toBe(1);
+  expect(unresult[0]).toBe("test:nomappings");
+})
 
 it("prompts refreshes on collision", (): void => {
   let resolver = new PvResolver();
