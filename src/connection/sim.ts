@@ -100,7 +100,7 @@ class RandomPv extends SimPv {
     });
   }
   public getValue(): VType | undefined {
-    return vdoubleOf(Math.random());
+    return vdouble(Math.random());
   }
 }
 
