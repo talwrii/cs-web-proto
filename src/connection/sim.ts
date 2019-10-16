@@ -36,6 +36,10 @@ abstract class SimPv {
     return { isConnected: true };
   }
 
+  public publish(): void {
+    this.onValueUpdate(this.pvName, this.getValue());
+  }
+
   public updateValue(value: VType): void {
     throw new Error(`Cannot set value on ${this.simulatorName()}`);
   }
@@ -43,7 +47,9 @@ abstract class SimPv {
   protected maybeSetInterval(callback: () => void): void {
     if (this.updateRate !== undefined) {
       setInterval(
-        (): void => this.onConnectionUpdate(this.pvName, this.getConnection()),
+        (): void => {
+          callback()
+        },
         this.updateRate
       );
     }
@@ -234,7 +240,7 @@ class EnumPv extends SimPv {
 
 class LocalPv extends SimPv {
   simulatorName() {
-    return "sine";
+    return "loc";
   }
 
   private value: VType | undefined;
@@ -255,6 +261,7 @@ class LocalPv extends SimPv {
 
   public updateValue(value: VType): void {
     this.value = value;
+    this.publish();
   }
 }
 
@@ -274,7 +281,6 @@ class LimitData extends SimPv {
   ) {
     super(pvName, onConnectionUpdate, onValueUpdate, updateRate);
     this.value = vdouble(50);
-    this.onValueUpdate(this.pvName, this.getValue());
     this.maybeSetInterval((): void =>
       this.onConnectionUpdate(this.pvName, this.getConnection())
     );
@@ -314,19 +320,25 @@ export class SimulatorPlugin implements Connection {
   private onConnectionUpdate: ConnectionChangedCallback;
   private onValueUpdate: ValueChangedCallback;
 
-  public constructor() {
+  public constructor(updateRate ?: number) {
     this.simPvs = {};
     this.enumPvs = {};
     this.onConnectionUpdate = nullConnCallback;
     this.onValueUpdate = nullValueCallback;
     this.subscribe = this.subscribe.bind(this);
     this.putPv = this.putPv.bind(this);
+    this.updateRate = updateRate || 2000;
   }
 
   public connect(
     connectionCallback: ConnectionChangedCallback,
     valueCallback: ValueChangedCallback
   ): void {
+    if (this.connected) {
+      throw new Error("Can only connect once")
+
+    }
+
     this.onConnectionUpdate = connectionCallback;
     this.onValueUpdate = valueCallback;
   }
@@ -335,19 +347,12 @@ export class SimulatorPlugin implements Connection {
     return this.onConnectionUpdate !== nullConnCallback;
   }
 
-  protected addPv(): boolean {
-    throw new Error("Not implemented");
-  }
-
-  protected subscribePv(): boolean {
-    throw new Error("Not implemented");
-  }
 
   protected makeSimulator(
     pvName: string,
     onConnectionUpdate: ConnectionChangedCallback,
     onValueUpdate: ValueChangedCallback,
-    updateRate?: number
+    updateRate: number
   ): SimPv | undefined {
     let cls;
     if (pvName.startsWith("loc://")) {
@@ -378,33 +383,53 @@ export class SimulatorPlugin implements Connection {
 
   public subscribe(pvName: string): void {
     log.debug(`Subscribing to ${pvName}.`);
-    this.simPvs[pvName] = this.makeSimulator(
+    const pvSimulator = this.simPvs[pvName] = (this.simPvs[pvName] || this.makeSimulator(
       pvName,
       this.onConnectionUpdate,
       this.onValueUpdate,
-      -1
-    );
+      this.updateRate
+    ));
+
+    if (pvSimulator !== undefined){
+      pvSimulator.publish();
+    }
+
   }
 
   public putPv(pvName: string, value: VType): void {
     const pvSimulator = (this.simPvs[pvName] ||
       this.makeSimulator(
         pvName,
-        nullConnCallback,
-        nullValueCallback,
-        undefined
+        this.onConnectionUpdate,
+        this.onValueUpdate,
+        this.updateRate
+      )) as SimPv;
+    if (pvSimulator !== undefined){
+      pvSimulator.updateValue(value);
+    }
+  }
+
+  public putPv(pvName: string, value: VType): void {
+    const pvSimulator = (this.simPvs[pvName] ||
+      this.makeSimulator(
+        pvName,
+        this.onConnectionUpdate,
+        this.onValueUpdate,
+        this.updateRate
       )) as SimPv;
     this.simPvs[pvName] = pvSimulator;
-    pvSimulator && pvSimulator.updateValue(value);
+    if (pvSimulator !== undefined){
+      pvSimulator.updateValue(value);
+    }
   }
 
   public getValue(pvName: string): VType | undefined {
     let pvData = (this.simPvs[pvName] ||
       this.makeSimulator(
         pvName,
-        nullConnCallback,
-        nullValueCallback,
-        undefined
+        this.onConnectionUpdate,
+        this.onValueUpdate,
+        this.updateRate
       )) as SimPv;
     return pvData && pvData.getValue();
   }
