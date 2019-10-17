@@ -72,14 +72,28 @@ it("initial limit values", (): void => {
   expect(simulator.getValue("sim://limit").value).toBe(50);
 });
 
-it("modifying limit values", (): void => {
-  simulator.putPv("sim://limit", vdouble(17));
+it("modifying limit values", (done): void => {
   let value = simulator.getValue("sim://limit");
-  expect(value.getValue()).toEqual(17);
+  function* repeatedCallback(){
+    const value1 = yield
+    expect(value1.getValue()).toEqual(50);
+    simulator.putPv("sim://limit", vdouble(17));
+    const value2 = yield
+    expect(value2.getValue()).toEqual(17);
+    done();
+  }
+  const iter = repeatedCallback();
+  iter.next()
+  getValue("sim://limit", (value: VType | undefined): void => {
+    iter.next(value);
+  });
+  simulator.subscribe("sim://limit");
 });
 
-it("disambiguating limit values", (): void => {
+
+it("distinguish limit values", (done): void => {
   let testCount = 0;
+
   getValue("sim://limit#one", (value: VType | undefined): void => {
     testCount++;
     expect(value.getValue()).toEqual(1);
@@ -94,6 +108,7 @@ it("disambiguating limit values", (): void => {
       done();
     }
   });
+
   simulator.putPv("sim://limit#one", vdouble(1));
   simulator.putPv("sim://limit#two", vdouble(2));
 });
@@ -106,7 +121,7 @@ it("return undefined for bad pvs", (): void => {
 });
 
 it("test sine values ", (): void => {
-  expect(() => simulator.putPv("sim://sine", 17)).toThrow(
+  expect(():void => simulator.putPv("sim://sine", 17)).toThrow(
     new Error("Cannot set value on sine")
   );
 });

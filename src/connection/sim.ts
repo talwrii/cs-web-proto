@@ -86,7 +86,6 @@ class RandomPv extends SimPv {
   private simulatorName(): string {
     return "random";
   }
-
   public constructor(
     pvName: string,
     onConnectionUpdate: ConnectionChangedCallback,
@@ -277,8 +276,10 @@ class LimitData extends SimPv {
   ) {
     super(pvName, onConnectionUpdate, onValueUpdate, updateRate);
     this.value = vdouble(50);
-    this.maybeSetInterval((): void =>
-      this.onConnectionUpdate(this.pvName, this.getConnection())
+    this.onConnectionUpdate(this.pvName, this.getConnection())
+    this.maybeSetInterval((): void => {
+      this.onValueUpdate(this.pvName, this.getValue());
+    }
     );
   }
 
@@ -293,6 +294,9 @@ class LimitData extends SimPv {
         alarm(alarmSeverity, 0, ""),
         timeNow()
       );
+    } else {
+      throw new Error(`Value (${value}) is not of ValueType`);
+      this.publish();
     }
   }
 
