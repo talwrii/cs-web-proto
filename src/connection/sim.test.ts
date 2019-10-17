@@ -16,7 +16,7 @@ function getValue(pvName: string, callback: Function): void {
 }
 
 it("test local values", (done): void => {
-  getValue("loc://location", (value:VType|undefined): void => {
+  getValue("loc://location", (value: VType | undefined): void => {
     expect(value.getValue()).toEqual(17);
     done();
   });
@@ -73,23 +73,21 @@ it("initial limit values", (): void => {
 });
 
 it("modifying limit values", (done): void => {
-  let value = simulator.getValue("sim://limit");
-  function* repeatedCallback(){
-    const value1 = yield
+  function* repeatedCallback(): void {
+    const value1 = yield;
     expect(value1.getValue()).toEqual(50);
     simulator.putPv("sim://limit", vdouble(17));
-    const value2 = yield
+    const value2 = yield;
     expect(value2.getValue()).toEqual(17);
     done();
   }
   const iter = repeatedCallback();
-  iter.next()
+  iter.next();
   getValue("sim://limit", (value: VType | undefined): void => {
     iter.next(value);
   });
   simulator.subscribe("sim://limit");
 });
-
 
 it("distinguish limit values", (done): void => {
   let testCount = 0;
@@ -97,14 +95,14 @@ it("distinguish limit values", (done): void => {
   getValue("sim://limit#one", (value: VType | undefined): void => {
     testCount++;
     expect(value.getValue()).toEqual(1);
-    if (testCount == 2){
+    if (testCount == 2) {
       done();
     }
   });
   getValue("sim://limit#two", (value: Vtype): void => {
     testCount++;
     expect(value.getValue()).toEqual(2);
-    if (testCount == 2){
+    if (testCount == 2) {
       done();
     }
   });
@@ -121,7 +119,7 @@ it("return undefined for bad pvs", (): void => {
 });
 
 it("test sine values ", (): void => {
-  expect(():void => simulator.putPv("sim://sine", 17)).toThrow(
+  expect((): void => simulator.putPv("sim://sine", 17)).toThrow(
     new Error("Cannot set value on sine")
   );
 });

@@ -276,11 +276,10 @@ class LimitData extends SimPv {
   ) {
     super(pvName, onConnectionUpdate, onValueUpdate, updateRate);
     this.value = vdouble(50);
-    this.onConnectionUpdate(this.pvName, this.getConnection())
+    this.onConnectionUpdate(this.pvName, this.getConnection());
     this.maybeSetInterval((): void => {
       this.onValueUpdate(this.pvName, this.getValue());
-    }
-    );
+    });
   }
 
   public updateValue(value: VType): void {
@@ -294,9 +293,9 @@ class LimitData extends SimPv {
         alarm(alarmSeverity, 0, ""),
         timeNow()
       );
+      this.publish();
     } else {
       throw new Error(`Value (${value}) is not of ValueType`);
-      this.publish();
     }
   }
 
@@ -402,20 +401,6 @@ export class SimulatorPlugin implements Connection {
         this.onValueUpdate,
         this.updateRate
       )) as SimPv;
-    if (pvSimulator !== undefined) {
-      pvSimulator.updateValue(value);
-    }
-  }
-
-  public putPv(pvName: string, value: VType): void {
-    const pvSimulator = (this.simPvs[pvName] ||
-      this.makeSimulator(
-        pvName,
-        this.onConnectionUpdate,
-        this.onValueUpdate,
-        this.updateRate
-      )) as SimPv;
-    this.simPvs[pvName] = pvSimulator;
     if (pvSimulator !== undefined) {
       pvSimulator.updateValue(value);
     }
