@@ -17,7 +17,7 @@ export const FrontPage = (): JSX.Element => (
   <div id="Central Column" style={{ width: "80%", margin: "auto" }}>
     <div>
       <ConnectedReadback pvName={"TMC43-TS-IOC-01:AI"} />
-      <ConnectedReadback pvName={"loc://pv1"} />
+      Local pv: <ConnectedReadback pvName={"loc://pv1"} />
       <ConnectedReadback pvName={"loc://pv2"} />
       <ConnectedReadback pvName={"sim://sine"} precision={3} />
       <ConnectedReadback pvName={"sim://sine#other"} precision={3} />
@@ -96,12 +96,22 @@ export const FrontPage = (): JSX.Element => (
           position: "relative",
           display: "block",
           margin: "15px auto"
-        }}
-      >
-        <Label text="Local Enum - [0, 1, 2, 3, 4, 5]" />
-        <ConnectedMenuButton pvName={"enum://enum1"} />
-        <ConnectedInput pvName={"enum://enum1"} />
-        <ConnectedStandaloneReadback pvName={"enum://enum1"} />
+        }}>
+
+        <Label text="Local Enum - [une, deux, trois]" />
+        Initializer: <ConnectedMenuButton pvName={"loc://enum1<VEnum>(2, \"une\", \"deux\", \"trois\")"} />
+        <br />
+        Duplicate initializer: <ConnectedMenuButton pvName={"loc://enum1<VEnum>(2, \"bad\", \"worse\", \"terrible\")"} />
+        <br />
+        Using initialized value<ConnectedReadback pvName={"loc://enum1"} />
+        <br />
+        Bad enum protocol: <ConnectedMenuButton pvName={"enum://test"} />
+
+
+        <Label text="Initalized pvnames" />
+
+        <ConnectedReadback pvName={"loc://one(1.0)"} />
+
       </div>
     </div>
   </div>
