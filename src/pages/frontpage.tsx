@@ -86,7 +86,7 @@ export const FrontPage = (): JSX.Element => (
           margin: "15px auto"
         }}
       >
-        <Label text="Sim Enum" />
+        <Label text="Simulated Enum" />
         <ConnectedMenuButton pvName={"sim://enum"} />
         <ConnectedInput pvName={"sim://enum"} />
         <ConnectedStandaloneReadback pvName={"sim://enum"} precision={2} />
@@ -114,5 +114,6 @@ export const FrontPage = (): JSX.Element => (
 
       </div>
     </div>
-  </div>
+
+  </div >
 );
